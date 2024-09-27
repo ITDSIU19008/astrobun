@@ -578,8 +578,11 @@ def plot_radar_chart(final_scores, average_scores):
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Hàm gọi GPT để sinh nội dung dựa trên input
-with st.expander("Chọn ngôn ngữ / Language settings"):
-    language = st.radio("", ["Tiếng Việt", "English"])
+# chọn ngôn ngữ
+language = st.select_slider(
+    "Chọn ngôn ngữ / Language settings", 
+    options=["Tiếng Việt", "English"]
+)
     
 def generate_content_with_gpt(prompt, model="gpt-4o-mini", max_tokens=500):
     try:
