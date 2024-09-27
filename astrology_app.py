@@ -579,10 +579,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Hàm gọi GPT để sinh nội dung dựa trên input
 # chọn ngôn ngữ
-language = st.select_slider(
-    "Chọn ngôn ngữ / Language settings", 
-    options=["Tiếng Việt", "English"]
-)
+language = st.selectbox("Chọn ngôn ngữ / Language settings", ["Tiếng Việt", "English"])
     
 def generate_content_with_gpt(prompt, model="gpt-4o-mini", max_tokens=500):
     try:
