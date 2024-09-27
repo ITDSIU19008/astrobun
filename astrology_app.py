@@ -576,8 +576,16 @@ def plot_radar_chart(final_scores, average_scores):
 
 #------------------ Chọn Ngôn Ngữ/Language----------------
 
-language = st.selectbox("Chọn ngôn ngữ / Language settings", ["Tiếng Việt", "English"])
-    
+# language = st.selectbox("Chọn ngôn ngữ / Language settings", ["Tiếng Việt", "English"])
+# Danh sách các ngôn ngữ
+languages = ["Tiếng Việt", "English"]
+
+# Thiết lập mặc định English
+default_language = "English"
+
+# Cho phép người dùng chọn ngôn ngữ
+language = st.selectbox("Chọn ngôn ngữ / Language settings", languages, index=languages.index(default_language))
+
 #------------------------Hàm gọi AI---------------------------------------------------------------------------
 
 # Hàm lấy nhận xét dựa trên điểm số và trait
