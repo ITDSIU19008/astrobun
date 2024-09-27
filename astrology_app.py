@@ -578,7 +578,9 @@ def plot_radar_chart(final_scores, average_scores):
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Hàm gọi GPT để sinh nội dung dựa trên input
-language = st.selectbox("Chọn ngôn ngữ / Language settings", ["Tiếng Việt", "English"])
+with st.expander("Chọn ngôn ngữ / Language settings"):
+    language = st.radio("", ["Tiếng Việt", "English"])
+    
 def generate_content_with_gpt(prompt, model="gpt-4o-mini", max_tokens=500):
     try:
         # neu version new 
@@ -1459,15 +1461,15 @@ def delete_cache_by_user_hash():
     if 'report_cache' not in st.session_state:
         st.session_state['report_cache'] = {}
     
-    # Nhập user_hash để xóa cache
-    user_hash_input = st.sidebar.text_input("Enter User Hash to delete cache:")
+    # Nhập user_hash để xóa cache (trong Tab 2)
+    user_hash_input = st.text_input("Enter User Hash to delete cache:")
     
-    if st.sidebar.button("Delete Cache"):
+    if st.button("Delete Cache"):
         if user_hash_input in st.session_state['report_cache']:
             del st.session_state['report_cache'][user_hash_input]
-            st.sidebar.success(f"Cache for user_hash: {user_hash_input} has been deleted.")
+            st.success(f"Cache for user_hash: {user_hash_input} has been deleted.")
         else:
-            st.sidebar.warning(f"No cache found for user_hash: {user_hash_input}")
+            st.warning(f"No cache found for user_hash: {user_hash_input}")
 
 # Hàm đăng xuất admin
 def admin_logout():
