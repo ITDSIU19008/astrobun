@@ -573,14 +573,39 @@ def plot_radar_chart(final_scores, average_scores):
     st.plotly_chart(fig, use_container_width=True)
 
 # ---------------------NHẬN XET---------------------------------
+
+#------------------ Chọn Ngôn Ngữ/Language----------------
+# language = st.selectbox("Chọn ngôn ngữ / Language settings", ["Tiếng Việt", "English"])
+    
+# Danh sách các ngôn ngữ
+languages = ["Tiếng Việt", "English"]
+
+# Thiết lập mặc định Tiếng Việt
+default_language = "Tiếng Việt"
+
+# Cho phép người dùng nhập ngôn ngữ hoặc chọn từ danh sách
+input_language = st.text_input("Chọn hoặc nhập ngôn ngữ / Language settings", value=default_language)
+
+# Nếu không nhập, sử dụng selectbox để chọn
+selected_language = st.selectbox("Hoặc chọn từ danh sách:", languages, index=languages.index(default_language))
+
+# Nếu người dùng nhập liệu, ưu tiên sử dụng giá trị nhập
+if input_language:
+    if input_language in languages:
+        language = input_language
+    else:
+        st.warning(f"Ngôn ngữ '{input_language}' không có trong danh sách. Sử dụng lựa chọn trong selectbox.")
+        language = selected_language
+else:
+    language = selected_language
+
+#------------------------Hàm gọi AI---------------------------------------------------------------------------
+
 # Hàm lấy nhận xét dựa trên điểm số và trait
 # Đặt API key của OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Hàm gọi GPT để sinh nội dung dựa trên input
-# chọn ngôn ngữ
-language = st.selectbox("Chọn ngôn ngữ / Language settings", ["Tiếng Việt", "English"])
-    
 def generate_content_with_gpt(prompt, model="gpt-4o-mini", max_tokens=500):
     try:
         # neu version new 
@@ -1506,3 +1531,4 @@ if st.session_state['is_admin']:
 else:
     # Nếu chưa đăng nhập, hiển thị giao diện đăng nhập
     admin_access()
+
