@@ -707,7 +707,7 @@ def get_top_traits_description_with_gpt(top_3_traits, language, age):
     score_level, score_description = determine_score_level_and_description(trait, score)
 
     # Tạo prompt bằng cách thay thế các biến
-    prompt = prompt_template.format(top_3_traits=', '.join(top_3_traits), trait=trait,score=score,score_level=score_level,score_description=score_description, language=language, tone=tone, age_group=age_group)
+    prompt = prompt_template.format(top_3_traits=', '.join(top_3_traits), language=language, tone=tone, age_group=age_group)
     
     # Gọi GPT để sinh nội dung
     return generate_content_with_gpt(prompt)
