@@ -1276,186 +1276,91 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# st.sidebar.header('Nhập thông tin của bạn:'if language == "Tiếng Việt" else "Enter your informations:")
+st.sidebar.header('Nhập thông tin của bạn:'if language == "Tiếng Việt" else "Enter your informations:")
 
-# # Dịch văn bản dựa trên ngôn ngữ đã chọn
-# if language == "Tiếng Việt":
-#     date_label = 'Ngày sinh (yyyy/mm/dd)'
-#     hour_label = "Giờ"
-#     minute_label = "Phút"
-#     am_pm_label = "AM/PM"
-#     not_sure_time_msg = "Nếu không rõ giờ sinh, hãy để 11h59p AM."
-#     birth_place_label = "Nhập tên thành phố:"
-#     suggestion_label = "Chọn một thành phố từ gợi ý:"
-#     no_suggestions_msg = "Không tìm thấy thành phố nào phù hợp."
-#     enter_city_msg = "Nhập tên thành phố để tìm kiếm nơi sinh của bạn."
-#     text = "Vui lòng nhập ngày tháng năm sinh mà bạn được sinh ra"
-# else:
-#     date_label = 'Date of Birth (yyyy/mm/dd)'
-#     hour_label = "Hour"
-#     minute_label = "Minute"
-#     am_pm_label = "AM/PM"
-#     not_sure_time_msg = "If you're unsure of the birth time, use 11:59 AM."
-#     birth_place_label = "Enter city name:"
-#     suggestion_label = "Select a city from suggestions:"
-#     no_suggestions_msg = "No matching city found."
-#     enter_city_msg = "Enter city or country name to see suggestions."
-#     text = "Please enter the date you were born"
+# Dịch văn bản dựa trên ngôn ngữ đã chọn
+if language == "Tiếng Việt":
+    date_label = 'Ngày sinh (yyyy/mm/dd)'
+    hour_label = "Giờ"
+    minute_label = "Phút"
+    am_pm_label = "AM/PM"
+    not_sure_time_msg = "Nếu không rõ giờ sinh, hãy để 11h59p AM."
+    birth_place_label = "Nhập tên thành phố:"
+    suggestion_label = "Chọn một thành phố từ gợi ý:"
+    no_suggestions_msg = "Không tìm thấy thành phố nào phù hợp."
+    enter_city_msg = "Nhập tên thành phố để tìm kiếm nơi sinh của bạn."
+    text = "Vui lòng nhập ngày tháng năm sinh mà bạn được sinh ra"
+    calculate_button_label = "Tạo Báo Cáo" 
+    refresh_button_label = "Tạo mới" 
 
-# # Nhập ngày sinh
-# birth_date = st.sidebar.date_input(date_label, min_value=datetime(1700, 1, 1), max_value=datetime.today())
-# age = calculate_age(birth_date)
+else:
+    date_label = 'Date of Birth (yyyy/mm/dd)'
+    hour_label = "Hour"
+    minute_label = "Minute"
+    am_pm_label = "AM/PM"
+    not_sure_time_msg = "If you're unsure of the birth time, use 11:59 AM."
+    birth_place_label = "Enter city name:"
+    suggestion_label = "Select a city from suggestions:"
+    no_suggestions_msg = "No matching city found."
+    enter_city_msg = "Enter city or country name to see suggestions."
+    text = "Please enter the date you were born"
+    calculate_button_label = "Calculate"  
+    refresh_button_label = "Refresh" 
 
-# st.sidebar.markdown(
-#     f'<p style="color:white;">{text}</p>',
-#     unsafe_allow_html=True
-# )
 
-# col1, col2, col3 = st.sidebar.columns(3)
-# with col1:
-#     hour = st.sidebar.number_input(hour_label, min_value=0, max_value=12, value=11)  # Đặt giá trị mặc định là 11
-# with col2:
-#     minute = st.sidebar.number_input(minute_label, min_value=0, max_value=59, value=59)  # Đặt giá trị mặc định là 59
-# with col3:
-#     am_pm = st.sidebar.radio(am_pm_label, ["AM", "PM"], index=0)  # Chọn AM làm mặc định
+# Nhập ngày sinh
+birth_date = st.sidebar.date_input(date_label, min_value=datetime(1700, 1, 1), max_value=datetime.today())
+age = calculate_age(birth_date)
 
-# # Thêm câu thông báo về giờ sinh không rõ
-# st.sidebar.markdown(
-#     f'<p style="color:white;">{not_sure_time_msg}</p>',
-#     unsafe_allow_html=True
-# )
-
-# # Chuyển đổi sang định dạng 24 giờ
-# if am_pm == "PM" and hour != 12:
-#     hour += 12
-# elif am_pm == "AM" and hour == 12:
-#     hour = 0
-
-# # Nhập địa điểm sinh
-# birth_place = st.sidebar.text_input(birth_place_label)
-# if birth_place:
-#     suggestions = get_city_suggestions(birth_place)
-#     if suggestions:
-#         selected_city = st.sidebar.selectbox(suggestion_label, suggestions)
-#         st.sidebar.markdown(
-#             f'<p style="color:white;">{f"You have selected: {selected_city}" if language == "English" else f"Bạn đã chọn: {selected_city}"}</p>',
-#             unsafe_allow_html=True
-#         )
-#     else:
-#         # st.sidebar.write(no_suggestions_msg)
-#         st.sidebar.markdown(
-#     f'<p style="color:white;">{no_suggestions_msg}</p>',
-#     unsafe_allow_html=True
-# )
-# else:
-#     # st.sidebar.write(enter_city_msg)
-#     st.sidebar.markdown(
-#     f'<p style="color:white;">{enter_city_msg}</p>',
-#     unsafe_allow_html=True)
-
-with st.expander('Nhập thông tin của bạn:' if language == "Tiếng Việt" else "Enter your information:", expanded=True):
-   
-        # Dịch văn bản dựa trên ngôn ngữ đã chọn
-        if language == "Tiếng Việt":
-            date_label = 'Ngày sinh (yyyy/mm/dd)'
-            hour_label = "Giờ"
-            minute_label = "Phút"
-            am_pm_label = "AM/PM"
-            not_sure_time_msg = "Nếu không rõ giờ sinh, hãy để 11h59p AM."
-            birth_place_label = "Nhập tên thành phố:"
-            suggestion_label = "Chọn một thành phố từ gợi ý:"
-            no_suggestions_msg = "Hệ Thống đang quả tải vì lượng truy cập cao, vui lòng thử lại sau ít phút nữa."
-            enter_city_msg = "Nhập tên thành phố để tìm kiếm nơi sinh của bạn."
-            text = "Vui lòng nhập ngày tháng năm sinh mà bạn được sinh ra"
-            calculate_button_label = "Tạo Báo Cáo" 
-            refresh_button_label = "Tạo mới" 
-        else:
-            date_label = 'Date of Birth (yyyy/mm/dd)'
-            hour_label = "Hour"
-            minute_label = "Minute"
-            am_pm_label = "AM/PM"
-            not_sure_time_msg = "If you're unsure of the birth time, use 11:59 AM."
-            birth_place_label = "Enter city name:"
-            suggestion_label = "Select a city from suggestions:"
-            no_suggestions_msg = "Please Try Again Later."
-            enter_city_msg = "Enter city or country name to see suggestions."
-            text = "Please enter the date you were born"
-            calculate_button_label = "Calculate"  
-            refresh_button_label = "Refresh" 
-
-        # Nhập ngày sinh
-        birth_date = st.date_input(date_label, min_value=datetime(1700, 1, 1), max_value=datetime.today())
-        age = calculate_age(birth_date)
-
-        st.markdown(
-            f'<p style="color:white;">{text}</p>',
-            unsafe_allow_html=True
-        )
-
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            hour = st.number_input(hour_label, min_value=0, max_value=12, value=11)  # Đặt giá trị mặc định là 11
-        with col2:
-            minute = st.number_input(minute_label, min_value=0, max_value=59, value=59)  # Đặt giá trị mặc định là 59
-        with col3:
-            am_pm = st.radio(am_pm_label, ["AM", "PM"], index=0)  # Chọn AM làm mặc định
-
-        # Thêm câu thông báo về giờ sinh không rõ
-        st.markdown(
-            f'<p style="color:white;">{not_sure_time_msg}</p>',
-            unsafe_allow_html=True
-        )
-
-        # Chuyển đổi sang định dạng 24 giờ
-        if am_pm == "PM" and hour != 12:
-            hour += 12
-        elif am_pm == "AM" and hour == 12:
-            hour = 0
-
-        # Nhập địa điểm sinh
-        birth_place = st.text_input(birth_place_label)
-        if birth_place:
-            suggestions = get_city_suggestions(birth_place)
-            if suggestions:
-                selected_city = st.selectbox(suggestion_label, suggestions)
-                st.markdown(
-                    f'<p style="color:white;">{f"You have selected: {selected_city}" if language == "English" else f"Bạn đã chọn: {selected_city}"}</p>',
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    f'<p style="color:white;">{no_suggestions_msg}</p>',
-                    unsafe_allow_html=True
-                )
-        else:
-            st.markdown(
-                f'<p style="color:white;">{enter_city_msg}</p>',
-                unsafe_allow_html=True
-            )
-# Thêm CSS để tạo khoảng cách giữa nút Calculate và Tabs
-st.markdown(
-    """
-    <style>
-    .button-container {
-        display: flex;
-        justify-content: space-between; /* Đặt nút Calculate bên trái và Refresh bên phải */
-        align-items: center;
-    }
-    .calculate-button {
-        margin-right: 10px;
-    }
-    .stTabs {
-        margin-top: 20px; /* Tạo khoảng cách trên các tab */
-    }
-    </style>
-    """,
+st.sidebar.markdown(
+    f'<p style="color:white;">{text}</p>',
     unsafe_allow_html=True
 )
 
-# Thêm nút "Calculate" và "Refresh" trong cùng một hàng, với ngôn ngữ động
+col1, col2, col3 = st.sidebar.columns(3)
+with col1:
+    hour = st.sidebar.number_input(hour_label, min_value=0, max_value=12, value=11)  # Đặt giá trị mặc định là 11
+with col2:
+    minute = st.sidebar.number_input(minute_label, min_value=0, max_value=59, value=59)  # Đặt giá trị mặc định là 59
+with col3:
+    am_pm = st.sidebar.radio(am_pm_label, ["AM", "PM"], index=0)  # Chọn AM làm mặc định
 
-    # Khi nhấn nút "Calculate", ẩn form và hiển thị kết quả
-if st.button(f"✨ {calculate_button_label} ✨"):
+# Thêm câu thông báo về giờ sinh không rõ
+st.sidebar.markdown(
+    f'<p style="color:white;">{not_sure_time_msg}</p>',
+    unsafe_allow_html=True
+)
+
+# Chuyển đổi sang định dạng 24 giờ
+if am_pm == "PM" and hour != 12:
+    hour += 12
+elif am_pm == "AM" and hour == 12:
+    hour = 0
+
+# Nhập địa điểm sinh
+birth_place = st.sidebar.text_input(birth_place_label)
+if birth_place:
+    suggestions = get_city_suggestions(birth_place)
+    if suggestions:
+        selected_city = st.sidebar.selectbox(suggestion_label, suggestions)
+        st.sidebar.markdown(
+            f'<p style="color:white;">{f"You have selected: {selected_city}" if language == "English" else f"Bạn đã chọn: {selected_city}"}</p>',
+            unsafe_allow_html=True
+        )
+    else:
+        # st.sidebar.write(no_suggestions_msg)
+        st.sidebar.markdown(
+    f'<p style="color:white;">{no_suggestions_msg}</p>',
+    unsafe_allow_html=True
+)
+else:
+    # st.sidebar.write(enter_city_msg)
+    st.sidebar.markdown(
+    f'<p style="color:white;">{enter_city_msg}</p>',
+    unsafe_allow_html=True)
+
+# Khi nhấn nút "Calculate", ẩn form và hiển thị kết quả
+if st.sidebar.button(f"✨ {calculate_button_label} ✨"):
             if not birth_place:
                 # Hiển thị thông báo lỗi nếu chưa nhập địa điểm sinh
                 if language == "Tiếng Việt":
@@ -1763,7 +1668,7 @@ if st.button(f"✨ {calculate_button_label} ✨"):
 
 
     # Nút Refresh để làm mới ứng dụng
-if st.button(f"{refresh_button_label}"):
+if st.sidebar.button(f"{refresh_button_label}"):
         st.experimental_rerun()
 
 # Hàm xóa cache từ session state và file txt
