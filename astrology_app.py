@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 import json
 import openai
 import hashlib
-
+from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 
 # Đường dẫn tương đối tới thư mục ephemeris (trong cùng thư mục với file Python chính)
 relative_ephe_path = os.path.join(os.path.dirname(__file__), 'sweph')
@@ -86,19 +86,36 @@ def get_zodiac_sign_and_degree(degree):
     degree_in_sign = degree % 30
     return sign, degree_in_sign
 
-def get_city_suggestions(query):
-    geolocator = Nominatim(user_agent="astrology_app")
-    location = geolocator.geocode(query, exactly_one=False, limit=5, language='en')  # Thêm tham số 'language'
-    if location:
-        return [f"{loc.address} ({loc.latitude}, {loc.longitude})" for loc in location]
-    return []
+def get_city_suggestions(query, retries=3):
+    geolocator = Nominatim(user_agent="astrology_app", timeout=10)  # Thêm thời gian chờ dài hơn
+    for attempt in range(retries):
+        try:
+            # Thực hiện yêu cầu tìm kiếm địa điểm
+            location = geolocator.geocode(query, exactly_one=False, limit=5, language='en')
+            
+            # Nếu tìm thấy địa điểm, trả về danh sách các địa chỉ
+            if location:
+                return [f"{loc.address} ({loc.latitude}, {loc.longitude})" for loc in location]
+            
+            # Nếu không tìm thấy, trả về danh sách rỗng
+            return []
+        
+        except GeocoderTimedOut:
+            if attempt < retries - 1:
+                continue  # Nếu còn lần thử, tiếp tục thử lại
+            else:
+                st.error("Yêu cầu đã hết thời gian chờ. Vui lòng thử lại sau.")
+                return []
+        
+        except GeocoderUnavailable:
+            st.error("Dịch vụ định vị không khả dụng. Vui lòng thử lại sau.")
+            return []
+        
+        except Exception as e:
+            st.error(f"Đã xảy ra lỗi khi truy vấn địa điểm: {str(e)}")
+            return []
+        
 
-# Function to convert decimal degrees to DMS (degrees, minutes, seconds)
-def decimal_to_dms(degree):
-    d = int(degree)
-    m = int((degree - d) * 60)
-    s = (degree - d - m / 60) * 3600
-    return f"{d}° {m}' {s:.2f}\""
 
 # Function to get latitude, longitude, and timezone from place name
 def get_location_and_timezone(place):
@@ -112,6 +129,13 @@ def get_location_and_timezone(place):
     else:
         st.error(f"Cannot find location for place: {place}")
         return None #10.8231, 106.6297, 'Asia/Ho_Chi_Minh'  # Default to Ho Chi Minh
+
+# Function to convert decimal degrees to DMS (degrees, minutes, seconds)
+def decimal_to_dms(degree):
+    d = int(degree)
+    m = int((degree - d) * 60)
+    s = (degree - d - m / 60) * 3600
+    return f"{d}° {m}' {s:.2f}\""
 
 # Function to calculate planetary positions
 def get_planet_positions(year, month, day, hour, minute, lat, lon, timezone):
@@ -332,7 +356,7 @@ def calculate_financial_traits(individual_planets, formatted_aspects):
     selected_planets = ['Sun', 'Moon', 'Mercury', 'Mars', 'Venus', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
     individual_planets = [(row['Planet'], row['Zodiac Sign']) for _, row in df_positions.iterrows() if row['Planet'] in selected_planets]
 
-    final_scores = {trait: 0 for trait in ['Adventurous', 'Convenience', 'Impulsive', 'Conservative', 'Caution', 'Analytical']}
+    final_scores = {trait: 0 for trait in ['Adventurous', 'Convenience', 'Impulsive', 'Conservative', 'Cautious', 'Analytical']}
 
     # Tính điểm dựa trên vị trí của các hành tinh và cung hoàng đạo
     for planet, sign in individual_planets:
@@ -357,7 +381,7 @@ def calculate_financial_traits(individual_planets, formatted_aspects):
     # print(f"Extracted Aspects: {aspects}")
     
      # Initialize scores
-    final_scores = {trait: 0 for trait in ['Adventurous', 'Convenience', 'Impulsive', 'Conservative', 'Caution', 'Analytical']}
+    final_scores = {trait: 0 for trait in ['Adventurous', 'Convenience', 'Impulsive', 'Conservative', 'Cautious', 'Analytical']}
 
     # Compute base scores from planets and zodiac signs
     for planet, sign in individual_planets:
@@ -572,22 +596,16 @@ def plot_radar_chart(final_scores, average_scores):
     # Hiển thị biểu đồ trên Streamlit
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------------NHẬN XET---------------------------------
-
-#------------------ Chọn Ngôn Ngữ/Language----------------
-
-# language = st.selectbox("Chọn ngôn ngữ / Language settings", ["Tiếng Việt", "English"])
-# Danh sách các ngôn ngữ
+# ---------------------NHẬN XÉT---------------------------------
+# ____________________CHỌN NGÔN NGỮ__________________________
 languages = ["Tiếng Việt", "English"]
 
 # Thiết lập mặc định English
 default_language = "English"
 
 # Cho phép người dùng chọn ngôn ngữ
-language = st.selectbox("Chọn ngôn ngữ / Language settings", languages, index=languages.index(default_language))
-
-#------------------------Hàm gọi AI---------------------------------------------------------------------------
-
+language = st.sidebar.selectbox("Chọn ngôn ngữ / Language settings", languages, index=languages.index(default_language))
+#----------------------CALL API-----------------------------------
 # Hàm lấy nhận xét dựa trên điểm số và trait
 # Đặt API key của OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -620,11 +638,49 @@ def load_prompt_from_file(file_path):
         print(f"File {file_path} không tồn tại.")
         return None
 
+# Hàm lưu danh sách user_hash vào file
+def save_user_hash(user_hash):
+    with open('txt1.txt', 'a') as file:  # Sử dụng chế độ 'a' để append
+        file.write(user_hash + "\n")  # Ghi user_hash trên một dòng, thêm ký tự xuống dòng
+
+# Hàm khôi phục danh sách user_hash từ file
+def load_user_hash():
+    try:
+        with open('txt1.txt', 'r') as file:
+            return [line.strip() for line in file.readlines()]  # Đọc từng dòng và loại bỏ khoảng trắng
+    except FileNotFoundError:
+        return []
+
+# Hàm lưu (append) một báo cáo cụ thể vào file txt
+def append_report_cache_to_txt(user_hash, financial_traits_text, top_traits_description):
+    with open('txt3.txt', 'a') as file:  # Chế độ 'a' để thêm vào file thay vì ghi đè
+        financial_traits_text = financial_traits_text.replace('\n', '\\n')  # Chuyển \n thành \\n
+        top_traits_description = top_traits_description.replace('\n', '\\n')  # Chuyển \n thành \\n
+        file.write(f"{user_hash}|{financial_traits_text}|{top_traits_description}\n")
+
+# Hàm khôi phục report_cache từ file txt
+def load_report_cache_from_txt():
+    try:
+        report_cache = {}
+        with open('txt3.txt', 'r') as file:
+            for line in file.readlines():
+                parts = line.strip().split('|', 2)
+                if len(parts) == 3:
+                    user_hash = parts[0]
+                    financial_traits_text = parts[1].replace('\\n', '\n')  # Chuyển \\n thành \n
+                    top_traits_description = parts[2].replace('\\n', '\n')  # Chuyển \\n thành \n
+                    report_cache[user_hash] = (financial_traits_text, top_traits_description)
+                else:
+                    print(f"Dòng không hợp lệ: {line.strip()}")
+        return report_cache
+    except FileNotFoundError:
+        print("File không tồn tại, khởi tạo dữ liệu mới")
+        return {}
+
 # Create a hash based on user information (birth date, time, and place)
 def generate_user_hash(birth_date, birth_time, birth_place, language):
-    unique_string = f"{birth_date}_{birth_time}_{birth_place}_{language}"  # Thêm ngôn ngữ vào chuỗi
-    user_hash = hashlib.md5(unique_string.encode()).hexdigest()
-    return user_hash
+    unique_string = f"{birth_date}_{birth_time}_{birth_place}_{language}"
+    return hashlib.md5(unique_string.encode()).hexdigest()
 
 # Hàm để tính toán độ tuổi từ ngày sinh
 def calculate_age(birth_date):
@@ -648,7 +704,7 @@ def adjust_tone_based_on_age(age):
 def determine_score_level_and_description(trait, score):
     if 1.00 <= score <= 1.80:
         score_level = "rất thấp"
-        score_description = f"Người dùng gần như không có biểu hiện mạnh mẽ trong {trait}, cho thấy xu hướng rất thận trọng hoặc ít quan tâm đến khía cạnh này trong chi tiêu."
+        score_description = f"Người dùng gần như không có biểu hiện mạnh mẽ trong {trait}, cho thấy xu hướng ít quan tâm đến khía cạnh này trong chi tiêu."
     elif 1.81 <= score <= 2.60:
         score_level = "thấp"
         score_description = f"Người dùng có biểu hiện yếu trong {trait}, cho thấy họ có xu hướng tránh {trait} hoặc không thường xuyên thể hiện tính cách này trong các quyết định chi tiêu."
@@ -664,6 +720,7 @@ def determine_score_level_and_description(trait, score):
     
     return score_level, score_description
 
+
 # Hàm để sinh mô tả trait dựa trên GPT và độ tuổi
 def get_trait_description_with_gpt(trait, score, language, age):
     # Đọc prompt từ file
@@ -677,6 +734,7 @@ def get_trait_description_with_gpt(trait, score, language, age):
     tone, age_group = adjust_tone_based_on_age(age)
     # Gọi hàm xác định mức độ điểm số và mô tả
     score_level, score_description = determine_score_level_and_description(trait, score)
+
 
     # Tạo prompt bằng cách thay thế các biến
     prompt = prompt_template.format(
@@ -693,7 +751,7 @@ def get_trait_description_with_gpt(trait, score, language, age):
     return generate_content_with_gpt(prompt)
 
 # Hàm để sinh mô tả top 3 traits dựa trên GPT và độ tuổi
-def get_top_traits_description_with_gpt(top_3_traits, language, age):
+def get_top_traits_description_with_gpt(top_3_traits, final_scores, language, age):
     # Đọc prompt từ file (giả sử bạn có một file riêng cho top 3 traits)
     prompt_template = load_prompt_from_file('top_3_traits_template.txt')
     
@@ -704,10 +762,18 @@ def get_top_traits_description_with_gpt(top_3_traits, language, age):
     # Điều chỉnh giọng văn và nhóm tuổi dựa trên độ tuổi
     tone, age_group = adjust_tone_based_on_age(age)
     # Gọi hàm xác định mức độ điểm số và mô tả
-    score_level, score_description = determine_score_level_and_description(trait, score)
+    # score_level, score_description = determine_score_level_and_description(trait, score)
+    
+    # Chuẩn bị nội dung top 3 traits để điền vào prompt
+    traits_info = []
+    # for trait in top_3_traits:  # Thêm vòng lặp cho top 3 traits
+    for trait in final_scores:  # Lặp qua tất cả các traits trong final_scores
+        score = final_scores[trait]  # Lấy điểm số của trait hiện tại từ final_scores
+        score_level, score_description = determine_score_level_and_description(trait, score)
+        traits_info.append(f"Trait: {trait}, Score: {score} ({score_level}) - {score_description}")
 
     # Tạo prompt bằng cách thay thế các biến
-    prompt = prompt_template.format(top_3_traits=', '.join(top_3_traits), language=language, tone=tone, age_group=age_group)
+    prompt = prompt_template.format(top_3_traits=', '.join(top_3_traits),traits_info='\n'.join(traits_info), language=language, tone=tone, age_group=age_group)
     
     # Gọi GPT để sinh nội dung
     return generate_content_with_gpt(prompt)
@@ -1326,7 +1392,7 @@ if st.sidebar.button("✨Calculate✨"):
             tab_titles = ["Biểu Đồ Sao", "Hành Vi Tài Chính", "Gợi Ý Các Sản Phẩm", "Đánh giá"]
             rating_label = "Đánh giá ứng dụng từ 1 đến 5 sao"
             comment_label = "Bình luận về ứng dụng"
-            feedback_message = "### Gửi nhận xét của bạn vào link sau: [https://chiemtinhlaso.com/]"
+            feedback_message = "### Gửi nhận xét của bạn vào link sau: [https://...]"
         else:
             tab_titles = ["Astrology", "Financial Traits", "Product Recommendations", "Feedback"]
             rating_label = "Rate the app from 1 to 5 stars"
@@ -1350,7 +1416,9 @@ if st.sidebar.button("✨Calculate✨"):
         # Tab 2: Hiển thị Radar Chart cho các đặc điểm tài chính
         # Sử dụng biến report_cache như biến toàn cục
         if 'report_cache' not in st.session_state:
-            st.session_state.report_cache = {}
+            st.session_state.report_cache = load_report_cache_from_txt()
+        if 'user_hash' not in st.session_state:
+            st.session_state.user_hash = load_user_hash()
 
         with tabs[1]:
             if language == "Tiếng Việt":
@@ -1377,14 +1445,21 @@ if st.sidebar.button("✨Calculate✨"):
             birth_time_str = f"{hour:02}:{minute:02} {am_pm}"
             birth_place_str = birth_place  # Nơi sinh
 
-            # Thêm phần mở đầu
-            # st.write("Bạn có các đặc điểm tài chính nổi bật như sau:" if language == "Tiếng Việt" else "You have the following prominent financial traits:")
-            # Tạo hash duy nhất dựa trên thông tin người dùng
-            user_hash = generate_user_hash(birth_date_str, birth_time_str, birth_place_str, language)
+            # Tạo user_hash mới từ thông tin hiện tại của người dùng
+            current_user_hash = generate_user_hash(birth_date_str, birth_time_str, birth_place_str, language)
+            
+            # Khôi phục danh sách user_hash từ file (nếu chưa có)
+            if 'user_hash' not in st.session_state:
+                st.session_state.user_hash = load_user_hash()
 
-            # Kiểm tra xem báo cáo đã tồn tại trong cache hay chưa
-            if user_hash in st.session_state.report_cache:
-                financial_traits_text, top_traits_description = st.session_state.report_cache[user_hash]
+            # Kiểm tra nếu user_hash chưa có trong danh sách
+            if current_user_hash not in st.session_state.user_hash:
+                st.session_state.user_hash.append(current_user_hash)  # Thêm user_hash vào danh sách
+                save_user_hash(current_user_hash)  # Lưu user_hash mới vào file
+
+            # Kiểm tra nếu user_hash đã có trong cache
+            if current_user_hash in st.session_state.report_cache:
+                financial_traits_text, top_traits_description = st.session_state.report_cache[current_user_hash]
 
                 # Hiển thị lại nội dung từ cache
                 with st.expander("**Chi tiết các đặc điểm tài chính**" if language == "Tiếng Việt" else "**Financial traits**"):
@@ -1402,7 +1477,7 @@ if st.sidebar.button("✨Calculate✨"):
                     "Convenience": "purple",
                     "Impulsive": "red",
                     "Conservative": "orange",
-                    "Caution": "#f1d800",
+                    "Cautious": "#f1d800",
                     "Analytical": "green"
                 }
                 
@@ -1429,10 +1504,11 @@ if st.sidebar.button("✨Calculate✨"):
 
                     # Hiển thị mô tả cho top 3 traits
                     top_3_traits = get_top_3_traits(final_scores)
-                    top_traits_description = get_top_traits_description_with_gpt(top_3_traits, language, age)
+                    top_traits_description = get_top_traits_description_with_gpt(top_3_traits,final_scores, language, age)
                     # Lưu báo cáo vào cache với user_hash
-                    st.session_state.report_cache[user_hash] = (financial_traits_text, top_traits_description)
-
+                    st.session_state.report_cache[current_user_hash] = (financial_traits_text, top_traits_description)
+                    # Lưu báo cáo vào file txt để sử dụng lại khi khởi động lại ứng dụng
+                    append_report_cache_to_txt(current_user_hash, financial_traits_text, top_traits_description)
                 # Hiển thị tiêu đề nhận xét tổng quát dựa trên ngôn ngữ được chọn
                 st.write("### Nhận xét về hành vi tài chính:" if language == "Tiếng Việt" else "### Financial behavior insights:")
 
@@ -1474,10 +1550,50 @@ if st.sidebar.button("✨Calculate✨"):
             st.header(tab_titles[3])  # Hiển thị tiêu đề Tab tương ứng với tên tab
             st.write(feedback_message)  # Hiển thị link nhận xét
 
+# Hàm xóa cache từ session state và file txt
+def delete_cache_by_user_hash():
+    if 'report_cache' not in st.session_state:
+        st.session_state['report_cache'] = {}
+    
+    # Nhập user_hash để xóa cache
+    user_hash_input = st.text_input("Enter User Hash to delete cache:")
+    
+    if st.button("Delete Cache"):
+        # Xóa cache trong session state
+        if user_hash_input in st.session_state['report_cache']:
+            del st.session_state['report_cache'][user_hash_input]
+            st.success(f"Cache for user_hash: {user_hash_input} has been deleted from session.")
+        else:
+            st.warning(f"No cache found for user_hash: {user_hash_input} in session.")
+        
+        # Xóa cache từ file txt
+        if delete_cache_from_txt(user_hash_input):
+            st.success(f"Cache for user_hash: {user_hash_input} has been deleted from file.")
+        else:
+            st.warning(f"No cache found for user_hash: {user_hash_input} in file.")
+
+# Hàm xóa cache khỏi file report_cache.txt
+def delete_cache_from_txt(user_hash_to_delete):
+    try:
+        # Đọc tất cả các dòng từ file
+        with open('txt3.txt', 'r') as file:
+            lines = file.readlines()
+        
+        # Viết lại file, bỏ qua user_hash cần xóa
+        with open('txt3.txt', 'w') as file:
+            cache_found = False
+            for line in lines:
+                if not line.startswith(user_hash_to_delete):  # Nếu không phải là user_hash cần xóa
+                    file.write(line)
+                else:
+                    cache_found = True
+        
+        return cache_found  # Trả về True nếu tìm thấy và xóa user_hash, False nếu không
+    except FileNotFoundError:
+        return False
 
 # *** Thêm phần Admin Access và Cache Management ***
-# Đặt mật khẩu admin
-ADMIN_PASSWORD = "admin123"  # Bạn có thể thay đổi mật khẩu này
+ADMIN_PASSWORD = "admin123"  
 
 st.sidebar.subheader("              ")
 st.sidebar.subheader("              ")
@@ -1486,6 +1602,7 @@ st.sidebar.subheader("              ")
 st.sidebar.subheader("              ")
 st.sidebar.subheader("              ")
 st.sidebar.subheader("              ")
+
 
 # Hàm kiểm tra đăng nhập admin
 def admin_access():
@@ -1498,21 +1615,6 @@ def admin_access():
             st.sidebar.success("Logged in as Admin")
         else:
             st.sidebar.error("Invalid Admin Password")
-
-# Hàm xóa cache dành cho admin
-def delete_cache_by_user_hash():
-    if 'report_cache' not in st.session_state:
-        st.session_state['report_cache'] = {}
-    
-    # Nhập user_hash để xóa cache (trong Tab 2)
-    user_hash_input = st.text_input("Enter User Hash to delete cache:")
-    
-    if st.button("Delete Cache"):
-        if user_hash_input in st.session_state['report_cache']:
-            del st.session_state['report_cache'][user_hash_input]
-            st.success(f"Cache for user_hash: {user_hash_input} has been deleted.")
-        else:
-            st.warning(f"No cache found for user_hash: {user_hash_input}")
 
 # Hàm đăng xuất admin
 def admin_logout():
@@ -1544,9 +1646,8 @@ if st.session_state['is_admin']:
     # Tab admin panel để xóa cache và logout
     with tab2:
         st.subheader("Admin Panel")
-        delete_cache_by_user_hash()
-        admin_logout()
+        delete_cache_by_user_hash()  # Xóa cache
+        admin_logout()  # Đăng xuất admin
 else:
     # Nếu chưa đăng nhập, hiển thị giao diện đăng nhập
     admin_access()
-
