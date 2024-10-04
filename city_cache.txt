@@ -1,0 +1,5 @@
+hanoi|['Hà Nội, Vietnam (21.0283334, 105.854041)']
+hochiminh|['Ho Chi Minh City, Vietnam (10.7763897, 106.7011391)']
+hanam|['Hà Nam Province, Vietnam (20.5340294, 105.98102482169935)', 'Henan, China (34.0000001, 113.9999999)', 'Henan Mongol Autonomous County, Huangnan, Qinghai, China (34.5134583, 101.5456887)']
+binhdinh|['Bình Định Province, Vietnam (14.0779378, 108.9898798)']
+binh|['Quảng Bình Province, Vietnam (17.509599, 106.4004452)', 'Beijing, Dongcheng District, Beijing, 100010, China (39.9057136, 116.3912972)', 'Beijing, China (40.190632, 116.412144)', 'Trà Vinh Province, Vietnam (9.8037998, 106.3256808)', "P'yŏngyang, North Korea (39.0167979, 125.7473609)"]
